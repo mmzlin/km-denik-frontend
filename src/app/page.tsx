@@ -28,26 +28,31 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-10 w-full max-w-sm">
+    <div className="min-h-screen flex items-center justify-center bg-[#0a0a12]">
+      {/* jemné záření v pozadí */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-blue-600/10 blur-[120px]" />
+      </div>
+
+      <div className="relative bg-[#13131e] rounded-2xl border border-white/10 shadow-2xl p-10 w-full max-w-sm">
         <div className="text-center mb-8">
           <span className="text-4xl">🚴</span>
-          <h1 className="mt-3 text-2xl font-bold text-gray-900">KM Deník</h1>
-          <p className="mt-1 text-sm text-gray-500">Přihlas se magic linkem</p>
+          <h1 className="mt-3 text-2xl font-bold text-white tracking-tight">KM Deník</h1>
+          <p className="mt-1 text-sm text-slate-400">Přihlas se magic linkem</p>
         </div>
 
         {sent ? (
           <div className="text-center py-4">
             <div className="text-3xl mb-3">📬</div>
-            <p className="font-medium text-gray-800">Zkontroluj email</p>
-            <p className="mt-1 text-sm text-gray-500">
-              Poslali jsme odkaz na <strong>{email}</strong>
+            <p className="font-semibold text-white">Zkontroluj email</p>
+            <p className="mt-1 text-sm text-slate-400">
+              Poslali jsme odkaz na <span className="text-slate-200 font-medium">{email}</span>
             </p>
           </div>
         ) : (
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">
                 Email
               </label>
               <input
@@ -56,18 +61,18 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="tvuj@email.cz"
                 required
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
               />
             </div>
 
             {error && (
-              <p className="text-sm text-red-600">{error}</p>
+              <p className="text-sm text-red-400">{error}</p>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-40 transition-colors shadow-lg shadow-blue-900/30"
             >
               {loading ? 'Odesílám…' : 'Poslat magic link'}
             </button>

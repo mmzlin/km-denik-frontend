@@ -75,46 +75,62 @@ export default function DashboardPage() {
 
   const totalKm = rides.reduce((s, r) => s + Number(r.km), 0)
 
+  const inputClass =
+    'w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition'
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+    <div className="min-h-screen bg-[#0a0a12] text-white">
+      {/* záření v pozadí */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] rounded-full bg-blue-600/8 blur-[140px]" />
+      </div>
+
+      <header className="relative border-b border-white/8 bg-[#0d0d18]/80 backdrop-blur px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
           <span className="text-xl">🚴</span>
-          <h1 className="text-lg font-bold text-gray-900">KM Deník</h1>
+          <h1 className="text-lg font-bold text-white tracking-tight">KM Deník</h1>
         </div>
         <button
           onClick={handleLogout}
-          className="text-sm text-gray-500 hover:text-gray-800 transition-colors"
+          className="text-sm text-slate-400 hover:text-white transition-colors"
         >
           Odhlásit
         </button>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <p className="text-sm text-gray-500 mb-1">Celkem letos</p>
-          <p className="text-4xl font-bold text-blue-600">
-            {totalKm.toFixed(1)} <span className="text-xl font-normal text-gray-400">km</span>
+      <main className="relative max-w-2xl mx-auto px-4 py-8 space-y-5">
+
+        {/* Statistika */}
+        <div className="bg-[#13131e] rounded-2xl border border-white/10 p-6">
+          <p className="text-xs font-medium text-slate-500 uppercase tracking-widest mb-2">Celkem letos</p>
+          <div className="flex items-end gap-3">
+            <p className="text-5xl font-bold text-white leading-none">
+              {totalKm.toFixed(1)}
+            </p>
+            <span className="text-xl font-normal text-slate-400 mb-1">km</span>
+          </div>
+          <p className="text-sm text-slate-500 mt-2">
+            <span className="text-slate-300 font-medium">{rides.length}</span> výjezdů celkem
           </p>
-          <p className="text-sm text-gray-400 mt-1">{rides.length} výjezdů</p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h2 className="text-base font-semibold text-gray-800 mb-4">Přidat výjezd</h2>
+        {/* Formulář */}
+        <div className="bg-[#13131e] rounded-2xl border border-white/10 p-6">
+          <h2 className="text-base font-semibold text-white mb-4">Přidat výjezd</h2>
           <form onSubmit={handleAddRide} className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Datum</label>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Datum</label>
                 <input
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   required
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={inputClass}
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Kilometry</label>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">Kilometry</label>
                 <input
                   type="number"
                   value={km}
@@ -123,52 +139,53 @@ export default function DashboardPage() {
                   min="0.1"
                   step="0.1"
                   required
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={inputClass}
                 />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Poznámka (volitelné)</label>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5">Poznámka (volitelné)</label>
               <input
                 type="text"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Výjezd do hor, skvělé počasí…"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={inputClass}
               />
             </div>
-            {saveError && <p className="text-sm text-red-600">{saveError}</p>}
+            {saveError && <p className="text-sm text-red-400">{saveError}</p>}
             <button
               type="submit"
               disabled={saving}
-              className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
+              className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 disabled:opacity-40 transition-colors shadow-lg shadow-blue-900/30"
             >
               {saving ? 'Ukládám…' : 'Uložit výjezd'}
             </button>
           </form>
         </div>
 
-        <div className="bg-white rounded-2xl border border-gray-200 p-6">
-          <h2 className="text-base font-semibold text-gray-800 mb-4">Historie výjezdů</h2>
+        {/* Historie */}
+        <div className="bg-[#13131e] rounded-2xl border border-white/10 p-6">
+          <h2 className="text-base font-semibold text-white mb-4">Historie výjezdů</h2>
           {loading ? (
-            <p className="text-sm text-gray-400">Načítám…</p>
+            <p className="text-sm text-slate-500">Načítám…</p>
           ) : rides.length === 0 ? (
-            <p className="text-sm text-gray-400">Zatím žádné výjezdy. Přidej první!</p>
+            <p className="text-sm text-slate-500">Zatím žádné výjezdy. Přidej první!</p>
           ) : (
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-white/6">
               {rides.map((ride) => (
-                <li key={ride.id} className="py-3 flex items-center justify-between">
+                <li key={ride.id} className="py-3.5 flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-800">
+                    <p className="text-sm font-medium text-slate-100">
                       {new Date(ride.date).toLocaleDateString('cs-CZ', {
                         day: 'numeric', month: 'long', year: 'numeric',
                       })}
                     </p>
                     {ride.notes && (
-                      <p className="text-xs text-gray-400 mt-0.5">{ride.notes}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{ride.notes}</p>
                     )}
                   </div>
-                  <span className="text-sm font-semibold text-blue-600">
+                  <span className="text-sm font-bold text-blue-400 tabular-nums">
                     {Number(ride.km).toFixed(1)} km
                   </span>
                 </li>
