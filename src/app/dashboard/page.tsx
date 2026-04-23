@@ -32,6 +32,19 @@ export default function DashboardPage() {
       setUserId(data.user.id)
       loadRides(data.user.id)
     })
+
+    // Poslouchá změny session (např. po návratu z magic linku)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        setUserId(session.user.id)
+        loadRides(session.user.id)
+      }
+      if (event === 'SIGNED_OUT') {
+        router.replace('/')
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [router])
 
   async function loadRides(uid: string) {
