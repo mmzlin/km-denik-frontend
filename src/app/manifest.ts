@@ -3,7 +3,7 @@ import type { MetadataRoute } from 'next'
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Cyklodenik mmzlin',
-    short_name: 'Cyklodenik',
+    short_name: 'Cyklodeník',
     description: 'Osobní cyklistický deník — záznamy jízd a statistiky',
     start_url: '/dashboard',
     display: 'standalone',
