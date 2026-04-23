@@ -134,7 +134,7 @@ export default function DashboardPage() {
         <div className="bg-[#13131e] rounded-2xl border border-white/10 px-5 py-5">
           <h2 className="text-base font-semibold text-white mb-4">Přidat výjezd</h2>
           <form onSubmit={handleAddRide} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
                   Datum
@@ -149,7 +149,7 @@ export default function DashboardPage() {
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
-                  Km
+                  Kilometry
                 </label>
                 <input
                   type="number"
