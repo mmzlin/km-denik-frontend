@@ -4,12 +4,12 @@ import "./globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
 });
 
 export const viewport: Viewport = {
@@ -18,15 +18,20 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  // KRITICKÉ pro iOS PWA s notchem — aktivuje safe-area-inset CSS proměnné
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
-  title: "Cyklodenik mmzlin",
+  title: "Cyklodeník",
   description: "Osobní cyklistický deník — záznamy jízd a statistiky",
   manifest: "/manifest.webmanifest",
+  applicationName: "Cyklodeník",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent",
+    // 'default' = standardní status bar (bezpečnější než black-translucent
+    // který může způsobit "chin gap" na některých iOS verzích)
+    statusBarStyle: "default",
     title: "Cyklodeník",
   },
   icons: {
@@ -37,6 +42,11 @@ export const metadata: Metadata = {
     apple: [
       { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
     ],
+  },
+  formatDetection: {
+    telephone: false,
+    email: false,
+    address: false,
   },
 };
 

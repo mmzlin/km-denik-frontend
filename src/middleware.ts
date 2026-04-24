@@ -25,10 +25,11 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // Obnoví session — DŮLEŽITÉ: nesmí obsahovat žádnou logiku mezi createServerClient a getUser
+  // KRITICKÉ dle Supabase docs: nesmí být žádný kód mezi
+  // createServerClient a getUser, jinak session nemusí být obnovena.
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Nepřihlášený uživatel se snaží dostat na dashboard → login
+  // Chrání /dashboard — nepřihlášený uživatel jde na login
   if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/', request.url))
   }
@@ -38,6 +39,10 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|icons|apple-touch-icon.png|manifest.webmanifest).*)',
+    /*
+     * Vyhne se: Next.js interním souborům, statickým assetům, ikonám,
+     * favicon, manifest a všem souborům s příponou (obrázky atd.)
+     */
+    '/((?!_next/static|_next/image|favicon\\.ico|icons|apple-touch-icon|manifest\\.webmanifest|.*\\.(?:png|jpg|jpeg|svg|webp|ico)$).*)',
   ],
 }

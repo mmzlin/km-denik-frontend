@@ -7,6 +7,9 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
+  /* Říká prohlížeči (iOS Safari), že stránka je v dark mode.
+     Bez tohoto má iOS date picker bílý text na bílém pozadí. */
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -18,28 +21,56 @@
 
 html {
   height: 100%;
-  /* plynulé scrollování na iOS */
-  -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
+  /* iOS — vyplní celou výšku včetně oblasti pod statusbarem */
+  height: -webkit-fill-available;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  /* zabrání "bounce" efektu v PWA na iOS */
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  /* zabrání bounce efektu v PWA na iOS */
   overscroll-behavior: none;
   min-height: 100%;
+  min-height: -webkit-fill-available;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* iOS — zabrání přiblížení při focusu na input (font-size musí být ≥16px) */
+/* iOS — zabrání auto-zoom při focusu na input.
+   Font-size MUSÍ být ≥ 16px, jinak Safari zoomuje. */
 input,
 textarea,
-select {
+select,
+button {
   font-size: 16px;
+  font-family: inherit;
 }
 
-/* Vlastní třídy pro safe area */
+/* Date input v dark mode — calendar ikona bílá */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(0.8);
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Number input — odebrání spinnerů (Safari + Chrome) */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Safe area utility třídy */
 .pt-safe {
   padding-top: var(--safe-top);
 }
@@ -52,7 +83,7 @@ select {
   padding-top: calc(var(--safe-top) + 1rem);
 }
 
-/* Formulářová pole vždy pod sebou — bez překrývání */
+/* Formulářová pole vždy pod sebou — nezávislé na Tailwind buildu */
 .form-fields {
   display: flex;
   flex-direction: column;
@@ -63,4 +94,13 @@ select {
 .form-fields > div {
   width: 100%;
   display: block;
+}
+
+/* Animace načítání */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 0.8s linear infinite;
 }
