@@ -51,3 +51,16 @@ select {
 .header-safe {
   padding-top: calc(var(--safe-top) + 1rem);
 }
+
+/* Formulářová pole vždy pod sebou — bez překrývání */
+.form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.form-fields > div {
+  width: 100%;
+  display: block;
+}
