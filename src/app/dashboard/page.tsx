@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -12,49 +12,109 @@ type Ride = {
 }
 
 const HISTORY_PREVIEW_LIMIT = 6
+const YEARLY_GOAL_STORAGE_KEY = 'cyklodenik-yearly-goal'
+const DEFAULT_YEARLY_GOAL = 500
+const YEARLY_GOAL_CHANGE_EVENT = 'cyklodenik:yearly-goal-change'
+
+// Vrací dnešní datum v lokálním čase ve formátu YYYY-MM-DD.
+// new Date().toISOString() je v UTC — v ČR (UTC+1/+2) by mezi
+// půlnocí a 02:00 vrátil včerejší den.
+function getTodayLocalISO() {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// useSyncExternalStore vzor pro localStorage — bez setState-in-effect lintu.
+// Server snapshot vrací default kvůli SSR konzistenci.
+function readYearlyGoal(): number {
+  if (typeof window === 'undefined') return DEFAULT_YEARLY_GOAL
+  const stored = window.localStorage.getItem(YEARLY_GOAL_STORAGE_KEY)
+  if (!stored) return DEFAULT_YEARLY_GOAL
+  const parsed = Number(stored)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_YEARLY_GOAL
+}
+
+function subscribeYearlyGoal(onChange: () => void) {
+  if (typeof window === 'undefined') return () => {}
+  // 'storage' fires jen pro změny z jiných tabů, custom event pokrývá this tab.
+  window.addEventListener('storage', onChange)
+  window.addEventListener(YEARLY_GOAL_CHANGE_EVENT, onChange)
+  return () => {
+    window.removeEventListener('storage', onChange)
+    window.removeEventListener(YEARLY_GOAL_CHANGE_EVENT, onChange)
+  }
+}
+
+function getServerYearlyGoal(): number {
+  return DEFAULT_YEARLY_GOAL
+}
 
 export default function DashboardPage() {
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
   const [rides, setRides] = useState<Ride[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
 
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  const [date, setDate] = useState(getTodayLocalISO)
   const [km, setKm] = useState('')
   const [notes, setNotes] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [deleteError, setDeleteError] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [yearlyGoal, setYearlyGoal] = useState(500)
+  const yearlyGoal = useSyncExternalStore(
+    subscribeYearlyGoal,
+    readYearlyGoal,
+    getServerYearlyGoal,
+  )
   const [showFullHistory, setShowFullHistory] = useState(false)
 
   const loadRides = useCallback(async (uid: string) => {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('rides')
-      .select('id, date, km, notes')
-      .eq('user_id', uid)
-      .order('date', { ascending: false })
+    setLoadError('')
 
-    if (!error) {
-      setRides((data as Ride[]) ?? [])
+    try {
+      const { data, error } = await supabase
+        .from('rides')
+        .select('id, date, km, notes')
+        .eq('user_id', uid)
+        .order('date', { ascending: false })
+
+      if (error) {
+        setLoadError(error.message)
+      } else {
+        setRides((data as Ride[]) ?? [])
+      }
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Nepodařilo se načíst výjezdy')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [])
 
   useEffect(() => {
     let active = true
 
-    supabase.auth.getUser().then(({ data }) => {
-      if (!active) return
-      if (!data.user) {
-        router.replace('/')
-        return
-      }
-      setUserId(data.user.id)
-      loadRides(data.user.id)
-    })
+    supabase.auth
+      .getUser()
+      .then(({ data }) => {
+        if (!active) return
+        if (!data.user) {
+          router.replace('/')
+          return
+        }
+        setUserId(data.user.id)
+        loadRides(data.user.id)
+      })
+      .catch((err) => {
+        if (!active) return
+        setLoading(false)
+        setLoadError(err instanceof Error ? err.message : 'Nepodařilo se ověřit přihlášení')
+      })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event) => {
@@ -71,29 +131,16 @@ export default function DashboardPage() {
     }
   }, [router, loadRides])
 
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      const storedGoal = window.localStorage.getItem('cyklodenik-yearly-goal')
-      if (storedGoal) {
-        const parsedGoal = Number(storedGoal)
-        if (Number.isFinite(parsedGoal) && parsedGoal > 0) {
-          setYearlyGoal(parsedGoal)
-        }
-      }
-    }, 0)
-
-    return () => window.clearTimeout(timeoutId)
-  }, [])
-
   async function handleAddRide(e: React.FormEvent) {
     e.preventDefault()
     if (!userId) return
 
-    // Český desetinný oddělovač "," → "." pro parseFloat
-    const normalizedKm = km.replace(',', '.')
-    const kmNumber = parseFloat(normalizedKm)
+    // Český desetinný oddělovač "," → "."
+    // Number() (nikoli parseFloat) odmítne smetí jako "12,5xyz" → NaN
+    const normalizedKm = km.trim().replace(',', '.')
+    const kmNumber = Number(normalizedKm)
 
-    if (!isFinite(kmNumber) || kmNumber <= 0) {
+    if (normalizedKm === '' || !Number.isFinite(kmNumber) || kmNumber <= 0) {
       setSaveError('Zadej platný počet kilometrů (např. 42.5)')
       return
     }
@@ -151,8 +198,9 @@ export default function DashboardPage() {
     const parsedGoal = Number(value)
     if (!Number.isFinite(parsedGoal) || parsedGoal <= 0) return
 
-    setYearlyGoal(parsedGoal)
-    window.localStorage.setItem('cyklodenik-yearly-goal', String(parsedGoal))
+    window.localStorage.setItem(YEARLY_GOAL_STORAGE_KEY, String(parsedGoal))
+    // Notifikuj useSyncExternalStore subscribery v aktuálním tabu.
+    window.dispatchEvent(new Event(YEARLY_GOAL_CHANGE_EVENT))
   }
 
   async function handleLogout() {
@@ -160,6 +208,8 @@ export default function DashboardPage() {
     router.replace('/')
   }
 
+  // Záměrně bez "Z" — chceme lokální čas. T12:00:00 minimalizuje
+  // riziko posunu o den při přepočtu napříč zónami pro filtry/zobrazení.
   function parseRideDate(dateValue: string) {
     return new Date(`${dateValue}T12:00:00`)
   }
@@ -210,9 +260,13 @@ export default function DashboardPage() {
 
   const maxMonthlyKm = Math.max(...monthlyTotals.map((month) => month.km), 1)
 
-  const bestMonth = monthlyTotals.reduce((bestMonthSoFar, month) =>
-    month.km > bestMonthSoFar.km ? month : bestMonthSoFar
-  )
+  // Pokud uživatel letos ještě nejel, nemá smysl označovat "leden"
+  // za nejlepší měsíc. V takovém případě bestMonth zůstane null.
+  const bestMonth = yearlyRides.length === 0
+    ? null
+    : monthlyTotals.reduce((bestMonthSoFar, month) =>
+        month.km > bestMonthSoFar.km ? month : bestMonthSoFar
+      )
 
   const averageRideKm = yearlyRides.length > 0 ? yearlyKm / yearlyRides.length : 0
   const visibleRides = showFullHistory
@@ -302,9 +356,11 @@ export default function DashboardPage() {
                 Nej měsíc
               </p>
               <p className="mt-2 text-xl font-bold text-emerald-400 tabular-nums">
-                {bestMonth.km.toFixed(1)}
+                {bestMonth ? bestMonth.km.toFixed(1) : '—'}
               </p>
-              <p className="text-xs text-slate-500">{bestMonth.label}</p>
+              <p className="text-xs text-slate-500">
+                {bestMonth ? bestMonth.label : 'zatím nic'}
+              </p>
             </div>
             <div className="rounded-xl bg-white/5 border border-white/10 p-3">
               <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide">
@@ -425,7 +481,7 @@ export default function DashboardPage() {
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
                   required
-                  max={new Date().toISOString().slice(0, 10)}
+                  max={getTodayLocalISO()}
                   className={inputClass}
                 />
               </div>
@@ -504,6 +560,11 @@ export default function DashboardPage() {
           >
             Historie výjezdů
           </h2>
+          {loadError && (
+            <p role="alert" className="text-sm text-red-400 leading-relaxed mb-3">
+              Chyba při načítání: {loadError}
+            </p>
+          )}
           {deleteError && (
             <p role="alert" className="text-sm text-red-400 leading-relaxed mb-3">
               {deleteError}
