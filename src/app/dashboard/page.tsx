@@ -215,7 +215,7 @@ export default function DashboardPage() {
 
   // text-base = 16px (nutné proti iOS auto-zoom)
   const inputClass =
-    'w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 text-base text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition'
+    'block w-full min-w-0 max-w-full box-border rounded-xl border border-white/10 bg-white/5 px-4 py-3.5 text-base text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition'
 
   return (
     <div className="min-h-screen bg-[#0a0a12] text-white flex flex-col">

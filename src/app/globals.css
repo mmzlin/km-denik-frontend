@@ -46,6 +46,27 @@ select,
 button {
   font-size: 16px;
   font-family: inherit;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+/* iOS/Safari date input má vlastní minimální šířku, která umí přetéct mimo kartu. */
+input[type="date"] {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="date"]::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: left;
+}
+
+input[type="date"]::-webkit-datetime-edit {
+  min-width: 0;
 }
 
 /* Date input v dark mode — calendar ikona bílá */
@@ -93,6 +114,7 @@ input[type="number"] {
 
 .form-fields > div {
   width: 100%;
+  min-width: 0;
   display: block;
 }
 
