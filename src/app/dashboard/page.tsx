@@ -11,6 +11,8 @@ type Ride = {
   notes: string | null
 }
 
+const HISTORY_PREVIEW_LIMIT = 6
+
 export default function DashboardPage() {
   const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
@@ -25,6 +27,7 @@ export default function DashboardPage() {
   const [deleteError, setDeleteError] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [yearlyGoal, setYearlyGoal] = useState(500)
+  const [showFullHistory, setShowFullHistory] = useState(false)
 
   const loadRides = useCallback(async (uid: string) => {
     setLoading(true)
@@ -212,6 +215,10 @@ export default function DashboardPage() {
   )
 
   const averageRideKm = yearlyRides.length > 0 ? yearlyKm / yearlyRides.length : 0
+  const visibleRides = showFullHistory
+    ? rides
+    : rides.slice(0, HISTORY_PREVIEW_LIMIT)
+  const hiddenRidesCount = Math.max(rides.length - HISTORY_PREVIEW_LIMIT, 0)
 
   // text-base = 16px (nutné proti iOS auto-zoom)
   const inputClass =
@@ -511,39 +518,53 @@ export default function DashboardPage() {
               Zatím žádné výjezdy. Přidej první!
             </p>
           ) : (
-            <ul className="divide-y divide-white/10">
-              {rides.map((ride) => (
-                <li
-                  key={ride.id}
-                  className="py-4 flex items-center justify-between gap-4"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-slate-100 leading-snug">
-                      {formatRideDate(ride.date)}
-                    </p>
-                    {ride.notes && (
-                      <p className="text-xs text-slate-500 mt-1 leading-snug truncate">
-                        {ride.notes}
+            <>
+              <ul className="divide-y divide-white/10">
+                {visibleRides.map((ride) => (
+                  <li
+                    key={ride.id}
+                    className="py-4 flex items-center justify-between gap-4"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-slate-100 leading-snug">
+                        {formatRideDate(ride.date)}
                       </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-base font-bold text-blue-400 tabular-nums">
-                      {Number(ride.km).toFixed(1)} km
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteRide(ride)}
-                      disabled={deletingId === ride.id}
-                      className="rounded-lg px-2.5 py-2 text-xs font-semibold text-red-300 bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/25 disabled:opacity-40 transition-colors"
-                      aria-label={`Smazat výjezd ${formatRideDate(ride.date)}`}
-                    >
-                      {deletingId === ride.id ? 'Mažu…' : 'Smazat'}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
+                      {ride.notes && (
+                        <p className="text-xs text-slate-500 mt-1 leading-snug truncate">
+                          {ride.notes}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-base font-bold text-blue-400 tabular-nums">
+                        {Number(ride.km).toFixed(1)} km
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteRide(ride)}
+                        disabled={deletingId === ride.id}
+                        className="rounded-lg px-2.5 py-2 text-xs font-semibold text-red-300 bg-red-500/10 hover:bg-red-500/20 active:bg-red-500/25 disabled:opacity-40 transition-colors"
+                        aria-label={`Smazat výjezd ${formatRideDate(ride.date)}`}
+                      >
+                        {deletingId === ride.id ? 'Mažu…' : 'Smazat'}
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              {hiddenRidesCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowFullHistory((current) => !current)}
+                  className="mt-4 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-slate-200 hover:bg-white/10 active:bg-white/15 transition-colors"
+                  aria-expanded={showFullHistory}
+                >
+                  {showFullHistory
+                    ? 'Skrýt starší výjezdy'
+                    : `Zobrazit starší výjezdy (${hiddenRidesCount})`}
+                </button>
+              )}
+            </>
           )}
         </section>
       </main>
